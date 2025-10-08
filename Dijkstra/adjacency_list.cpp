@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <iostream>
 #include "adjacency_list.h"
+#include "input_output.h"
 
 
 /// <summary>
@@ -15,14 +16,14 @@ adjacency_list init_adjacency_list(int node_count, int arc_count, int* matrix)
     adjacency_list graph = (adjacency_list)malloc(sizeof(*graph));
     if (graph == NULL)
     {
-        std::cout << "Memory allocation for graph error!" << std::endl;
+        outfile << "Memory allocation for graph error!" << std::endl;
         return NULL;
     }
 
     graph->nodes = (int*)calloc(size, sizeof(int));
     if (graph->nodes == NULL)
     {
-        std::cout << "Memory allocation for nodes error!" << std::endl;
+        outfile << "Memory allocation for nodes error!" << std::endl;
         free(graph->nodes);
         free(graph);
 
@@ -32,7 +33,7 @@ adjacency_list init_adjacency_list(int node_count, int arc_count, int* matrix)
     graph->next = (int*)calloc(size, sizeof(int));
     if (graph->next == NULL)
     {
-        std::cout << "Memory allocation for next error!" << std::endl;
+        outfile << "Memory allocation for next error!" << std::endl;
         free(graph->nodes);
         free(graph->next);
         free(graph);
@@ -44,7 +45,7 @@ adjacency_list init_adjacency_list(int node_count, int arc_count, int* matrix)
     graph->weight = (MY_TYPE*)calloc(size, sizeof(MY_TYPE));
     if (graph->weight == NULL)
     {
-        std::cout << "Memory allocation for weight error!" << std::endl;
+        outfile << "Memory allocation for weight error!" << std::endl;
         free(graph->nodes);
         free(graph->next);
         free(graph->weight);

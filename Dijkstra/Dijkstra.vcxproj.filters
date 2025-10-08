@@ -13,29 +13,47 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\Adjacency_list">
+      <UniqueIdentifier>{cd889e72-cc78-4dc8-8de7-da33d3c6af06}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Dijkstra">
+      <UniqueIdentifier>{da3594cf-86c9-4359-bb07-f3e39a15fe9c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\IO">
+      <UniqueIdentifier>{460339a9-9e75-402f-9c60-9df6e61ca5dd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="adjacency_list.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Adjacency_list</Filter>
     </ClCompile>
     <ClCompile Include="dijkstra.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Dijkstra</Filter>
+    </ClCompile>
+    <ClCompile Include="input_output.cpp">
+      <Filter>Source Files\IO</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="matrix.txt">
       <Filter>Source Files</Filter>
     </Text>
+    <Text Include="report.txt">
+      <Filter>Source Files</Filter>
+    </Text>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="adjacency_list.h">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Adjacency_list</Filter>
     </ClInclude>
     <ClInclude Include="dijkstra.h">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Dijkstra</Filter>
+    </ClInclude>
+    <ClInclude Include="input_output.h">
+      <Filter>Source Files\IO</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
