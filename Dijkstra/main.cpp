@@ -20,5 +20,6 @@ int main()
     
     free(graph);
     free(matrix);
+
     return 0;
 }

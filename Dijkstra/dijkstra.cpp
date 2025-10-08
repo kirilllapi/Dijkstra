@@ -87,7 +87,6 @@ void find_short_path(adjacency_list graph, int node_count, int arc_count, int fr
 		}	
 	}
 
-
 	outfile << "\nPath: ";
 	char first_node = 1;
 	for (int i = 0; i < node_count; i++)
@@ -101,7 +100,6 @@ void find_short_path(adjacency_list graph, int node_count, int arc_count, int fr
 	}
 	outfile << to;
 
-
 	outfile << "\n\nLabels: ";
 	for (int i = 0; i < node_count; i++)
 	{
@@ -109,9 +107,10 @@ void find_short_path(adjacency_list graph, int node_count, int arc_count, int fr
 	}
 
 
-
 	outfile << "\n\nShortest distance to target (" << to << "): "
 		<< (labels[to - 1] == INT_MAX ? -1 : labels[to - 1]) << "\n";
 
-
+	free(labels);
+	free(visited);
+	free(path);
 }
