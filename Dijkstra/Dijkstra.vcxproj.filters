@@ -36,6 +36,9 @@
     <ClCompile Include="input_output.cpp">
       <Filter>Source Files\IO</Filter>
     </ClCompile>
+    <ClCompile Include="UI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="matrix.txt">
@@ -54,6 +57,9 @@
     </ClInclude>
     <ClInclude Include="input_output.h">
       <Filter>Source Files\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="UI.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

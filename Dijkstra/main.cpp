@@ -1,6 +1,7 @@
 #include "adjacency_list.h"
 #include "dijkstra.h"
 #include "input_output.h"
+#include "UI.h"
 
 int main()
 {
@@ -17,6 +18,8 @@ int main()
     print_arrays_in_file(graph, node_count, arc_count);
 
     find_short_path(graph, node_count, arc_count, from, to);
+
+    drawWindow(matrix, node_count);
     
     free(graph);
     free(matrix);
