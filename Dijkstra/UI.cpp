@@ -1,55 +1,56 @@
-#include <SFML/Graphics.hpp>
+п»ї#include <SFML/Graphics.hpp>
 #include <vector>
 #include <random>
 #include <ctime>
 #include <cmath>
 #include <algorithm>
 #include <fstream>
+#include <iostream>
 
 
 
 
 
-// Статическая функция для рисования стрелки
-static void drawArrow(sf::RenderTarget& target, sf::Vector2f from, sf::Vector2f to, float nodeRadius, float size = 20.f)
+// РЎС‚Р°С‚РёС‡РµСЃРєР°СЏ С„СѓРЅРєС†РёСЏ РґР»СЏ СЂРёСЃРѕРІР°РЅРёСЏ СЃС‚СЂРµР»РєРё
+static void drawArrow(sf::RenderTarget& target, sf::Vector2f from, sf::Vector2f to, float nodeRadius, sf::Color color, float size = 20.f)
 {
     sf::Vector2f dir = to - from;
     float len = std::sqrt(dir.x * dir.x + dir.y * dir.y);
     if (len == 0.f) return;
     dir /= len;
 
-    // Точка конца линии, сдвинутая от центра узла
+    // РўРѕС‡РєР° РєРѕРЅС†Р° Р»РёРЅРёРё, СЃРґРІРёРЅСѓС‚Р°СЏ РѕС‚ С†РµРЅС‚СЂР° СѓР·Р»Р°
     sf::Vector2f tip = to - dir * nodeRadius;
     sf::Vector2f normal(-dir.y, dir.x);
 
     sf::ConvexShape arrow;
     arrow.setPointCount(3);
-    arrow.setPoint(0, tip);  // вершина стрелки
+    arrow.setPoint(0, tip);  // РІРµСЂС€РёРЅР° СЃС‚СЂРµР»РєРё
     arrow.setPoint(1, tip - dir * size + normal * (size * 0.6f));
     arrow.setPoint(2, tip - dir * size - normal * (size * 0.6f));
-    arrow.setFillColor(sf::Color(245, 105, 13));
+    arrow.setFillColor(color);
 
     target.draw(arrow);
 }
 
-static void drawEdgeWeight(sf::RenderTarget& target, sf::Vector2f from, sf::Vector2f to, int weight, float nodeRadius, sf::Font& font)
+static void drawEdgeWeight(sf::RenderTarget& target, sf::Vector2f from, sf::Vector2f to, int weight, float nodeRadius, sf::Font& font, sf::Color color)
 {
-    // --- Рисуем линию ---
+    // --- Р РёСЃСѓРµРј Р»РёРЅРёСЋ ---
     sf::Vector2f dir = to - from;
     float len = std::sqrt(dir.x * dir.x + dir.y * dir.y);
     if (len == 0.f) return;
     dir /= len;
 
     sf::RectangleShape line(sf::Vector2f(len - nodeRadius, 3.f));
-    line.setFillColor(sf::Color(245, 105, 13));
+    line.setFillColor(color);
     line.setPosition(from + dir * nodeRadius);
     line.setRotation(sf::degrees(std::atan2(dir.y, dir.x) * 180.f / 3.14159265f));
     target.draw(line);
 
-    // --- Рисуем вес ---
+    // --- Р РёСЃСѓРµРј РІРµСЃ ---
     sf::Vector2f mid = (from + to) / 2.f;
     sf::Vector2f normal(-dir.y, dir.x);
-    mid += normal * 10.f; // смещение от линии
+    mid += normal * 10.f; // СЃРјРµС‰РµРЅРёРµ РѕС‚ Р»РёРЅРёРё
 
     sf::Text text(font);
     text.setString(std::to_string(weight));
@@ -62,13 +63,13 @@ static void drawEdgeWeight(sf::RenderTarget& target, sf::Vector2f from, sf::Vect
 
 
 
-int drawWindow(int *matrix, int node_count)
+int drawWindow(int *matrix, int node_count, int* path, int from, int to)
 {
     sf::Clock clock;
     bool repelActive = true;
 
-    constexpr float WIDTH = 1000.f;
-    constexpr float HEIGHT = 720.f;
+    constexpr float WIDTH = 840.f;
+    constexpr float HEIGHT = 680.f;
 
 
     sf::ContextSettings settings;
@@ -77,7 +78,7 @@ int drawWindow(int *matrix, int node_count)
     sf::RenderWindow window(sf::VideoMode({ (unsigned)WIDTH, (unsigned)HEIGHT }), "Graph", sf::State::Windowed, settings);
     window.setFramerateLimit(60);
 
-    // Пример ориентированного графа (оставил твой)
+    // РџСЂРёРјРµСЂ РѕСЂРёРµРЅС‚РёСЂРѕРІР°РЅРЅРѕРіРѕ РіСЂР°С„Р° (РѕСЃС‚Р°РІРёР» С‚РІРѕР№)
     std::vector<std::vector<int>> adjacency(node_count, std::vector<int>(node_count, 0));;
 
     for (int i = 0; i < node_count; i++)
@@ -88,39 +89,62 @@ int drawWindow(int *matrix, int node_count)
         }
     }
 
+    char first = 1;
+
+    std::vector<int> normPath;
+    for (int i = 0; i < node_count; i++)
+    {
+        if (path[i] != INT_MAX)
+        {
+            if (first)
+            {
+                normPath.push_back(from - 1);
+                first = 0;
+            }
+            else
+            {
+                normPath.push_back(path[i] - 1); // РїСЂРµРѕР±СЂР°Р·СѓРµРј РЅРѕРјРµСЂ СѓР·Р»Р° СЃ 1 в†’ РёРЅРґРµРєСЃ СЃ 0
+            }
+        }
+    }
+    normPath.push_back(to - 1);
+
     int n = static_cast<int>(adjacency.size());
     std::vector<sf::Vector2f> nodes(n);
 
     sf::Vector2f center(WIDTH / 2.f, HEIGHT / 2.f);
     std::default_random_engine gen(static_cast<unsigned>(std::time(nullptr)));
-    std::uniform_real_distribution<float> offsetDist(-30.f, 30.f); // смещение ±30 пикселей
+    std::uniform_real_distribution<float> offsetDist(-30.f, 30.f); // СЃРјРµС‰РµРЅРёРµ В±30 РїРёРєСЃРµР»РµР№
 
     for (int i = 0; i < n; ++i) 
     {
         nodes[i] = center + sf::Vector2f(offsetDist(gen), offsetDist(gen));
     }
 
-    // Вектор скоростей для пошаговой анимации
+    // Р’РµРєС‚РѕСЂ СЃРєРѕСЂРѕСЃС‚РµР№ РґР»СЏ РїРѕС€Р°РіРѕРІРѕР№ Р°РЅРёРјР°С†РёРё
     std::vector<sf::Vector2f> velocities(n, { 0.f, 0.f });
 
     const float nodeRadius = 25.f;
 
-    // Параметры физики
+    // РџР°СЂР°РјРµС‚СЂС‹ С„РёР·РёРєРё
     const float area = WIDTH * HEIGHT;
-    const float k = std::sqrt(area / std::max(1, n)) * 0.3f;  // меньше естественная длина
-    const float damping = 0.99f;                              // больше затухание
+    const float k = std::sqrt(area / std::max(1, n)) * 0.3f;  // РјРµРЅСЊС€Рµ РµСЃС‚РµСЃС‚РІРµРЅРЅР°СЏ РґР»РёРЅР°
+    const float damping = 0.99f;                              // Р±РѕР»СЊС€Рµ Р·Р°С‚СѓС…Р°РЅРёРµ
     const float maxStep = 2.5f;
 
-    // Переменные для перетаскивания узлов
+    // РџРµСЂРµРјРµРЅРЅС‹Рµ РґР»СЏ РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёСЏ СѓР·Р»РѕРІ
     bool isDragging = false;
     int draggedNode = -1;
     sf::Vector2f dragOffset{ 0.f, 0.f };
 
-    // Основной цикл
+    // РћСЃРЅРѕРІРЅРѕР№ С†РёРєР»
     while (window.isOpen())
     {
+
+
+
         float elapsed = clock.getElapsedTime().asSeconds();
-        if (elapsed > 2.0f) repelActive = false;
+       
 
         while (auto event = window.pollEvent())
         {
@@ -166,39 +190,70 @@ int drawWindow(int *matrix, int node_count)
                     sf::Vector2f mousePos(static_cast<float>(mouseMoved->position.x), static_cast<float>(mouseMoved->position.y));
                     nodes[draggedNode] = mousePos + dragOffset;
 
-                    // Ограничиваем позицию узла в пределах окна
+                    // РћРіСЂР°РЅРёС‡РёРІР°РµРј РїРѕР·РёС†РёСЋ СѓР·Р»Р° РІ РїСЂРµРґРµР»Р°С… РѕРєРЅР°
                     nodes[draggedNode].x = std::min(WIDTH - nodeRadius, std::max(nodeRadius, nodes[draggedNode].x));
                     nodes[draggedNode].y = std::min(HEIGHT - nodeRadius, std::max(nodeRadius, nodes[draggedNode].y));
 
-                    // Обнулим скорость перетаскиваемого узла, чтобы физика не дергала его
+                    // РћР±РЅСѓР»РёРј СЃРєРѕСЂРѕСЃС‚СЊ РїРµСЂРµС‚Р°СЃРєРёРІР°РµРјРѕРіРѕ СѓР·Р»Р°, С‡С‚РѕР±С‹ С„РёР·РёРєР° РЅРµ РґРµСЂРіР°Р»Р° РµРіРѕ
                     velocities[draggedNode] = { 0.f, 0.f };
                 }
             }
+
+  
         }
 
         if (repelActive)
         {
             std::vector<sf::Vector2f> disp(n, { 0.f, 0.f });
 
+            // --- РћС‚С‚Р°Р»РєРёРІР°РЅРёРµ ---
+            const float repK = 20000.f; // СЃРёР»Р° РѕС‚С‚Р°Р»РєРёРІР°РЅРёСЏ
             for (int i = 0; i < n; ++i)
             {
                 for (int j = i + 1; j < n; ++j)
                 {
                     sf::Vector2f delta = nodes[i] - nodes[j];
-                    float dist = std::sqrt(delta.x * delta.x + delta.y * delta.y) + 0.01f;
+                    float dist = std::sqrt(delta.x * delta.x + delta.y * delta.y) + 0.1f;
                     sf::Vector2f dir = delta / dist;
 
-                    float repulse = std::min(10.f, (10.f * 10.f) / dist); // максимум 10 пикселей
-                    disp[i] += dir * repulse;
-                    disp[j] -= dir * repulse;
+                    float force = repK / (dist * dist);
+                    disp[i] += dir * force;
+                    disp[j] -= dir * force;
                 }
             }
+
+            // --- РџСЂРёС‚СЏР¶РµРЅРёРµ (РїРѕ СЂС‘Р±СЂР°Рј) ---
+            const float springK = 0.02f;      // СЃРёР»Р° РїСЂСѓР¶РёРЅС‹
+            const float restLen = 250.f;      // РµСЃС‚РµСЃС‚РІРµРЅРЅР°СЏ РґР»РёРЅР° СЂРµР±СЂР°
+            for (int i = 0; i < n; ++i)
+            {
+                for (int j = 0; j < n; ++j)
+                {
+                    if (adjacency[i][j] != 0)
+                    {
+                        sf::Vector2f delta = nodes[i] - nodes[j];
+                        float dist = std::sqrt(delta.x * delta.x + delta.y * delta.y) + 0.1f;
+                        sf::Vector2f dir = delta / dist;
+
+                        float force = springK * (dist - restLen);
+                        disp[i] -= dir * force;
+                        disp[j] += dir * force;
+                    }
+                }
+            }
+
+            // --- РџСЂРёРјРµРЅРµРЅРёРµ СЃРјРµС‰РµРЅРёСЏ СЃ РґРµРјРїС„РёСЂРѕРІР°РЅРёРµРј ---
+            const float step = 0.01f;   // РјР°Р»РµРЅСЊРєРёР№ С€Р°Рі (СЃРєРѕСЂРѕСЃС‚СЊ СЃС‚Р°Р±РёР»РёР·Р°С†РёРё)
+            const float damping = 0.9f; // РїРѕРґР°РІР»РµРЅРёРµ РєРѕР»РµР±Р°РЅРёР№
 
             for (int i = 0; i < n; ++i)
             {
                 if (i == draggedNode) continue;
-                nodes[i] += disp[i];
 
+                velocities[i] = (velocities[i] + disp[i] * step) * damping;
+                nodes[i] += velocities[i];
+
+                // РѕРіСЂР°РЅРёС‡РёРІР°РµРј РІ РѕРєРЅРµ
                 nodes[i].x = std::min(WIDTH - nodeRadius, std::max(nodeRadius, nodes[i].x));
                 nodes[i].y = std::min(HEIGHT - nodeRadius, std::max(nodeRadius, nodes[i].y));
             }
@@ -207,7 +262,8 @@ int drawWindow(int *matrix, int node_count)
 
 
 
-        // --- Рендер ---
+
+        // --- Р РµРЅРґРµСЂ ---
         window.clear(sf::Color(18, 18, 18));
 
 
@@ -218,10 +274,10 @@ int drawWindow(int *matrix, int node_count)
             font.openFromFile(filename);
         }
         catch (std::exception& e) {
-            return -1; // Не удалось загрузить шрифт
+            return -1; // РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ С€СЂРёС„С‚
         }
 
-        // Рёбра + стрелки
+        // Р С‘Р±СЂР° + СЃС‚СЂРµР»РєРё
         for (int i = 0; i < n; ++i)
         {
             for (int j = 0; j < n; ++j)
@@ -229,50 +285,95 @@ int drawWindow(int *matrix, int node_count)
                 if (adjacency[i][j] != 0)
                 {
                     bool bothDirections = adjacency[j][i] && i != j;
+                    bool inPath = false;
+
+                    // РџСЂРѕРІРµСЂРєР°: СЂРµР±СЂРѕ РїСЂРёРЅР°РґР»РµР¶РёС‚ РїСѓС‚Рё?
+                    for (int k = 0; k + 1 < normPath.size(); k++)
+                    {
+                        if ((normPath[k] == i && normPath[k + 1] == j) ||
+                            (normPath[k] == j && normPath[k + 1] == i))
+                        {
+                            inPath = true;
+                            break;
+                        }
+                    }
+
+                    sf::Color color = inPath ? sf::Color(245, 105, 13) : sf::Color(47, 54, 77);
+
                     if (bothDirections)
                     {
-                        if (i < j) drawEdgeWeight(window, nodes[i], nodes[j], adjacency[i][j], nodeRadius, font);
-
+                        if (i < j)
+                            drawEdgeWeight(window, nodes[i], nodes[j], adjacency[i][j], nodeRadius, font, color);
                     }
                     else
                     {
-                        drawEdgeWeight(window, nodes[i], nodes[j], adjacency[i][j], nodeRadius, font);
-
-                        drawArrow(window, nodes[i], nodes[j], nodeRadius);
+                        drawEdgeWeight(window, nodes[i], nodes[j], adjacency[i][j], nodeRadius, font, color);
+                        drawArrow(window, nodes[i], nodes[j], nodeRadius, color);
                     }
                 }
             }
         }
 
 
-       
 
-        // Внутри цикла рендера узлов:
+        // Р’РЅСѓС‚СЂРё С†РёРєР»Р° СЂРµРЅРґРµСЂР° СѓР·Р»РѕРІ:
         for (int i = 0; i < n; ++i)
         {
             sf::CircleShape node(nodeRadius);
             node.setOrigin({ nodeRadius, nodeRadius });
             node.setPosition(nodes[i]);
 
-            if (i == draggedNode) node.setFillColor(sf::Color(220, 101, 128));
-            else node.setFillColor(sf::Color(47, 54, 77));
+            // РўРµРєСЃС‚ СЃ РЅРѕРјРµСЂРѕРј СѓР·Р»Р°
+            sf::Text text(font);
 
-            node.setOutlineColor(sf::Color(245, 105, 13));
+            if (i == draggedNode) node.setFillColor(sf::Color(220, 101, 128));
+            else
+            {
+
+                if (from - 1 == i)
+                {
+                    text.setFillColor(sf::Color(0, 255, 0));
+                    node.setOutlineColor(sf::Color(0, 255, 0));
+                }
+                else if (to - 1 == i)
+                {
+                    text.setFillColor(sf::Color(247, 33, 0));
+                    node.setOutlineColor(sf::Color(247, 33, 0));
+                }
+                else
+                {
+                    bool onPath = false;
+                    for (int k = 0; k < normPath.size(); k++)
+                    {
+                        if (normPath[k] == i)
+                        {
+                            onPath = true;
+                            break;
+                        }
+                    }
+
+                    text.setFillColor(sf::Color(255, 255, 255));
+                    if (onPath)
+                        node.setOutlineColor(sf::Color(245, 105, 13)); // РѕСЂР°РЅР¶РµРІР°СЏ РѕР±РІРѕРґРєР°, РµСЃР»Рё РЅР° РїСѓС‚Рё
+                    else
+                        node.setOutlineColor(sf::Color(47, 54, 77));   // СЃРµСЂР°СЏ, РµСЃР»Рё РЅРµ РЅР° РїСѓС‚Рё
+                }
+
+            }
+
+            node.setFillColor(sf::Color(47, 54, 77));
             node.setOutlineThickness(3.f);
             window.draw(node);
 
-            // Текст с номером узла
-            sf::Text text(font);
 
   
 
             text.setString(std::to_string(i + 1)); 
             text.setCharacterSize(static_cast<unsigned int>(nodeRadius - 5.0));
-            text.setFillColor(sf::Color::White);
 
-            // Центрирование текста
+            // Р¦РµРЅС‚СЂРёСЂРѕРІР°РЅРёРµ С‚РµРєСЃС‚Р°
             sf::FloatRect bounds = text.getLocalBounds();
-            text.setOrigin(bounds.position + bounds.size / 2.f); // центрируем
+            text.setOrigin(bounds.position + bounds.size / 2.f); // С†РµРЅС‚СЂРёСЂСѓРµРј
             text.setPosition(nodes[i]);
             window.draw(text);
 

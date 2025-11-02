@@ -11,7 +11,7 @@
 /// <param name="arc_count"></param>
 /// <param name="from"></param>
 /// <param name="to"></param>
-void find_short_path(adjacency_list graph, int node_count, int arc_count, int from, int to)
+int* find_short_path(adjacency_list graph, int node_count, int arc_count, int from, int to)
 {
 	int next_node, adjacency_node;
 
@@ -25,7 +25,7 @@ void find_short_path(adjacency_list graph, int node_count, int arc_count, int fr
 		outfile << "Memory allocation error!" << std::endl;
 		free(labels);
 		free(visited);
-		return;
+		return NULL;
 	}
 
 	for (int i = 0; i < node_count; i++)
@@ -91,7 +91,7 @@ void find_short_path(adjacency_list graph, int node_count, int arc_count, int fr
 	char first_node = 1;
 	for (int i = 0; i < node_count; i++)
 	{
-		if (!(path[i] == INT_MAX))
+		if (path[i] != INT_MAX)
 		{
 			
 			outfile << path[i] << " -> ";
@@ -112,5 +112,6 @@ void find_short_path(adjacency_list graph, int node_count, int arc_count, int fr
 
 	free(labels);
 	free(visited);
-	free(path);
+
+	return path;
 }

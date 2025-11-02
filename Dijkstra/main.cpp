@@ -17,12 +17,12 @@ int main()
 
     print_arrays_in_file(graph, node_count, arc_count);
 
-    find_short_path(graph, node_count, arc_count, from, to);
+    int* path = find_short_path(graph, node_count, arc_count, from, to);
 
-    drawWindow(matrix, node_count);
+    drawWindow(matrix, node_count, path, from, to);
     
     free(graph);
     free(matrix);
-
+    free(path);
     return 0;
 }
