@@ -19,6 +19,14 @@ int* find_short_path(adjacency_list graph, int node_count, int arc_count, int fr
 	char* visited = (char*)calloc(node_count, sizeof(char));
 	int* path = (int*)calloc(node_count, sizeof(int));
 
+	if (path == NULL)
+	{
+outfile << "Memory allocation error!" << std::endl;
+		free(labels);
+		free(visited);
+		return NULL;
+	}
+
 
 	if (labels == NULL || visited == NULL)
 	{
@@ -28,10 +36,11 @@ int* find_short_path(adjacency_list graph, int node_count, int arc_count, int fr
 		return NULL;
 	}
 
-	for (int i = 0; i < node_count; i++)
+
+	for (int i = 0; i < node_count; i++) 
 	{
-		path[i] = INT_MAX;
-		labels[i] = INT_MAX;
+		path[i] = -1;        
+		labels[i] = INT_MAX;  
 	}
 
 	labels[from - 1] = 0;
@@ -77,8 +86,8 @@ int* find_short_path(adjacency_list graph, int node_count, int arc_count, int fr
 				labels[node_min_label] + graph->weight[next_node - 1] < labels[adjacency_node])
 			{
 				labels[adjacency_node] = labels[node_min_label] + graph->weight[next_node - 1];
-				
-				path[i] = node_min_label + 1;
+
+				path[adjacency_node] = node_min_label + 1; // <-- исправлено
 
 				outfile << "Node " << node_min_label + 1 << " -> " << adjacency_node + 1
 					<< " (weight = " << graph->weight[next_node - 1] << ")\n";
@@ -87,18 +96,42 @@ int* find_short_path(adjacency_list graph, int node_count, int arc_count, int fr
 		}	
 	}
 
-	outfile << "\nPath: ";
-	char first_node = 1;
-	for (int i = 0; i < node_count; i++)
+	int current = to - 1;
+
+	int* tmp_path = (int*)calloc(node_count, sizeof(int));
+
+	if (!tmp_path) 
 	{
-		if (path[i] != INT_MAX)
-		{
-			
-			outfile << path[i] << " -> ";
-			
-		}
+		outfile << "Memory allocation error for tmp_path!" << std::endl;
+		free(labels);
+		free(visited);
+		return NULL;
 	}
-	outfile << to;
+
+	int count = 0;
+
+	while (current != -1)
+	{
+		tmp_path[count++] = current + 1;
+		if (current == from - 1) break;
+		current = path[current] - 1; // идём по предшественникам
+	}
+
+	// переворачиваем tmp_path для правильного порядка
+	for (int i = 0; i < count / 2; i++)
+	{
+		int t = tmp_path[i];
+		tmp_path[i] = tmp_path[count - 1 - i];
+		tmp_path[count - 1 - i] = t;
+	}
+
+	// выводим
+	outfile << "\nPath: ";
+	for (int i = 0; i < count; i++)
+	{
+		if (i > 0) outfile << " -> ";
+		outfile << tmp_path[i];
+	}
 
 	outfile << "\n\nLabels: ";
 	for (int i = 0; i < node_count; i++)
@@ -112,6 +145,7 @@ int* find_short_path(adjacency_list graph, int node_count, int arc_count, int fr
 
 	free(labels);
 	free(visited);
+	free(path);
 
-	return path;
+	return tmp_path;
 }

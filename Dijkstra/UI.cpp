@@ -6,12 +6,10 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
-
-
-
-
+#include "UI.h"
 
 // Статическая функция для рисования стрелки
+// Функция рисования стрелки
 static void drawArrow(sf::RenderTarget& target, sf::Vector2f from, sf::Vector2f to, float nodeRadius, sf::Color color, float size = 20.f)
 {
     sf::Vector2f dir = to - from;
@@ -19,7 +17,7 @@ static void drawArrow(sf::RenderTarget& target, sf::Vector2f from, sf::Vector2f 
     if (len == 0.f) return;
     dir /= len;
 
-    // Точка конца линии, сдвинутая от центра узла
+    // Конечная точка стрелки, сдвинутая от центра узла
     sf::Vector2f tip = to - dir * nodeRadius;
     sf::Vector2f normal(-dir.y, dir.x);
 
@@ -33,7 +31,45 @@ static void drawArrow(sf::RenderTarget& target, sf::Vector2f from, sf::Vector2f 
     target.draw(arrow);
 }
 
-static void drawEdgeWeight(sf::RenderTarget& target, sf::Vector2f from, sf::Vector2f to, int weight, float nodeRadius, sf::Font& font, sf::Color color)
+void drawLoop(sf::RenderTarget& target, sf::Vector2f pos, float nodeRadius, sf::Color color = sf::Color::White) {
+    float loopRadius = nodeRadius * 0.6f;
+
+    // Центр дуги смещаем вверх и вправо от узла
+    sf::Vector2f loopCenter = pos + sf::Vector2f(nodeRadius, -nodeRadius);
+
+    // Рисуем саму петлю
+    sf::CircleShape loop(loopRadius);
+    loop.setOrigin({ loopRadius, loopRadius });
+    loop.setPosition(loopCenter);
+    loop.setFillColor(sf::Color::Transparent);
+    loop.setOutlineColor(color);
+    loop.setOutlineThickness(3.f);
+    target.draw(loop);
+
+    // Точка на границе узла для стрелки (петля заканчивается на узле)
+    float angle = 235.f * 3.14159265f / 180.f; // конец дуги вниз влево
+    sf::Vector2f tip(
+        loopCenter.x + loopRadius * std::cos(angle),
+        loopCenter.y + loopRadius * std::sin(angle)
+    );
+
+    // Направление стрелки — касательное к дуге
+    sf::Vector2f dir(-std::sin(angle), std::cos(angle));
+    dir /= std::sqrt(dir.x * dir.x + dir.y * dir.y);
+
+    // Рисуем стрелку
+    sf::ConvexShape arrow;
+    arrow.setPointCount(3);
+    arrow.setPoint(0, tip);  // вершина стрелки
+    arrow.setPoint(1, tip - dir * 15.f + sf::Vector2f(-dir.y, dir.x) * 9.f);
+    arrow.setPoint(2, tip - dir * 15.f - sf::Vector2f(-dir.y, dir.x) * 9.f);
+    arrow.setFillColor(color);
+
+    target.draw(arrow);
+}
+
+
+static void drawEdgeWeight(sf::RenderTarget& target, sf::Vector2f from, sf::Vector2f to, int weight, float nodeRadius, sf::Font& font, sf::Color color = sf::Color::White)
 {
     // --- Рисуем линию ---
     sf::Vector2f dir = to - from;
@@ -61,9 +97,29 @@ static void drawEdgeWeight(sf::RenderTarget& target, sf::Vector2f from, sf::Vect
     target.draw(text);
 }
 
+void drawLoopWeight(sf::RenderTarget& target, sf::Vector2f pos, float nodeRadius, int weight, sf::Font& font, sf::Color color = sf::Color::White) 
+{
+    float loopRadius = nodeRadius * 0.6f;
+    sf::Vector2f loopCenter = pos + sf::Vector2f(nodeRadius, -nodeRadius);
+
+    // Позиция подписи веса — чуть выше центра петли
+    sf::Vector2f textPos = loopCenter + sf::Vector2f(0.f, -loopRadius);
+
+    sf::Text text(font);
+    text.setString(std::to_string(weight));
+    text.setCharacterSize(20); // подбирается под размер узла
+    text.setFillColor(color);
+
+    // Центрирование текста
+    sf::FloatRect bounds = text.getLocalBounds();
+    text.setOrigin(bounds.getCenter());
+    text.setPosition(textPos);
+
+    target.draw(text);
+}
 
 
-int drawWindow(int *matrix, int node_count, int* path, int from, int to)
+int drawWindow(int *matrix, int node_count, int arc_count, int* path, int from, int to, adjacency_list init_adjacency_list)
 {
     sf::Clock clock;
     bool repelActive = true;
@@ -94,20 +150,12 @@ int drawWindow(int *matrix, int node_count, int* path, int from, int to)
     std::vector<int> normPath;
     for (int i = 0; i < node_count; i++)
     {
-        if (path[i] != INT_MAX)
-        {
-            if (first)
-            {
-                normPath.push_back(from - 1);
-                first = 0;
-            }
-            else
-            {
-                normPath.push_back(path[i] - 1); // преобразуем номер узла с 1 → индекс с 0
-            }
-        }
+        
+            
+        normPath.push_back(path[i] - 1);
+        if (path[i] == to) break;
+        
     }
-    normPath.push_back(to - 1);
 
     int n = static_cast<int>(adjacency.size());
     std::vector<sf::Vector2f> nodes(n);
@@ -199,7 +247,15 @@ int drawWindow(int *matrix, int node_count, int* path, int from, int to)
                 }
             }
 
-  
+            if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>())
+            {
+                if (keyPressed->scancode == sf::Keyboard::Scancode::LControl ||
+                    keyPressed->scancode == sf::Keyboard::Scancode::RControl)
+                {
+                    repelActive = !repelActive;
+                    std::cout << "repelActive = " << (repelActive ? "ON" : "OFF") << std::endl;
+                }
+            }
         }
 
         if (repelActive)
@@ -224,7 +280,7 @@ int drawWindow(int *matrix, int node_count, int* path, int from, int to)
 
             // --- Притяжение (по рёбрам) ---
             const float springK = 0.02f;      // сила пружины
-            const float restLen = 250.f;      // естественная длина ребра
+            const float restLen = node_count * 30.f;      // естественная длина ребра
             for (int i = 0; i < n; ++i)
             {
                 for (int j = 0; j < n; ++j)
@@ -266,7 +322,6 @@ int drawWindow(int *matrix, int node_count, int* path, int from, int to)
         // --- Рендер ---
         window.clear(sf::Color(18, 18, 18));
 
-
         sf::Font font;
 
         try {
@@ -277,14 +332,13 @@ int drawWindow(int *matrix, int node_count, int* path, int from, int to)
             return -1; // Не удалось загрузить шрифт
         }
 
-        // Рёбра + стрелки
+        // Внутри цикла рёбер:
         for (int i = 0; i < n; ++i)
         {
             for (int j = 0; j < n; ++j)
             {
                 if (adjacency[i][j] != 0)
                 {
-                    bool bothDirections = adjacency[j][i] && i != j;
                     bool inPath = false;
 
                     // Проверка: ребро принадлежит пути?
@@ -300,15 +354,26 @@ int drawWindow(int *matrix, int node_count, int* path, int from, int to)
 
                     sf::Color color = inPath ? sf::Color(245, 105, 13) : sf::Color(47, 54, 77);
 
-                    if (bothDirections)
+                    if (i == j)
                     {
-                        if (i < j)
-                            drawEdgeWeight(window, nodes[i], nodes[j], adjacency[i][j], nodeRadius, font, color);
+                        drawLoop(window, nodes[i], nodeRadius, color);
+                        drawLoopWeight(window, nodes[i], nodeRadius, adjacency[i][j], font);
                     }
                     else
                     {
-                        drawEdgeWeight(window, nodes[i], nodes[j], adjacency[i][j], nodeRadius, font, color);
-                        drawArrow(window, nodes[i], nodes[j], nodeRadius, color);
+                        bool bothDirections = adjacency[j][i] && i != j;
+                        if (bothDirections)
+                        {
+                            if (i < j)
+                            {
+                                drawEdgeWeight(window, nodes[i], nodes[j], adjacency[i][j], nodeRadius, font, color);
+                            }
+                        }
+                        else
+                        {
+                            drawEdgeWeight(window, nodes[i], nodes[j], adjacency[i][j], nodeRadius, font, color);
+                            drawArrow(window, nodes[i], nodes[j], nodeRadius, color);
+                        }
                     }
                 }
             }
@@ -337,7 +402,7 @@ int drawWindow(int *matrix, int node_count, int* path, int from, int to)
                 }
                 else if (to - 1 == i)
                 {
-                    text.setFillColor(sf::Color(247, 33, 0));
+                    text.setFillColor(sf::Color(255, 100, 50));
                     node.setOutlineColor(sf::Color(247, 33, 0));
                 }
                 else
@@ -379,6 +444,33 @@ int drawWindow(int *matrix, int node_count, int* path, int from, int to)
 
 
             window.draw(text);
+        }
+
+
+        {
+            // Фон под текстом
+            sf::RectangleShape bg(sf::Vector2f(WIDTH, 40.f));
+            bg.setPosition(sf::Vector2f(0.f, HEIGHT - 40.f));
+            bg.setFillColor(sf::Color(25, 25, 25, 230));
+            window.draw(bg);
+
+            // Создаём текст
+            sf::Text infoText(font);
+            infoText.setCharacterSize(18);
+            infoText.setFillColor(sf::Color::White);
+            infoText.setPosition(sf::Vector2f(10.f, HEIGHT - 32.f));
+
+            // Составляем строку пути через std::string
+            std::string pathStr = "From: " + std::to_string(from) + "    To: " + std::to_string(to) + "    Path: ";
+
+            for (int i = 0; i < static_cast<int>(normPath.size()); ++i)
+            {
+                if (i > 0) pathStr += " -> ";
+                pathStr += std::to_string(normPath[i] + 1);
+            }
+
+            infoText.setString(pathStr);
+            window.draw(infoText);
         }
 
 

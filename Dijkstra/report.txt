@@ -1,34 +1,35 @@
-Size matrix: 6x6
-Path from: 2
-Path to: 5
+Size matrix: 8x8
+Path from: 1
+Path to: 8
 
  
 Adjacency matrix:
-0 1 0 0 0 0 
-0 0 5 2 0 7 
-0 0 0 1 0 1 
-2 0 1 0 4 0 
-0 0 0 4 0 0 
-0 0 0 0 1 0 
+2 3 0 0 2 0 0 0 
+0 4 4 1 0 0 0 0 
+0 0 5 2 0 5 0 0 
+1 0 0 6 3 0 0 0 
+0 0 0 0 7 1 2 0 
+0 0 0 0 0 8 0 3 
+0 0 0 0 0 0 9 2 
+0 0 0 0 0 0 0 12 
 
 
 Adjacency_list: 
-Nodes:  0	0	0	0	0	0	2	3	4	6	4	6	1	3	5	4	5	
-Next:   7	8	11	13	16	17	0	9	10	0	12	0	14	15	0	0	0	
-Weight: 0	0	0	0	0	0	1	5	2	7	1	1	2	1	4	4	1	
+Nodes:  0	0	0	0	0	0	0	0	1	2	5	2	3	4	3	4	6	1	4	5	5	6	7	6	8	7	8	8	
+Next:   9	12	15	18	21	24	26	28	10	11	0	13	14	0	16	17	0	19	20	0	22	23	0	25	0	27	0	0	
+Weight: 0	0	0	0	0	0	0	0	2	3	2	4	4	1	5	2	5	1	6	3	7	1	2	8	3	9	2	12	
 
-================ Path from 2 to 5 =================
-Node 2 -> 3 (weight = 5)
-Node 2 -> 4 (weight = 2)
-Node 2 -> 6 (weight = 7)
-Node 4 -> 1 (weight = 2)
-Node 4 -> 3 (weight = 1)
-Node 4 -> 5 (weight = 4)
-Node 3 -> 6 (weight = 1)
-Node 6 -> 5 (weight = 1)
+================ Path from 1 to 8 =================
+Node 1 -> 2 (weight = 3)
+Node 1 -> 5 (weight = 2)
+Node 5 -> 6 (weight = 1)
+Node 5 -> 7 (weight = 2)
+Node 2 -> 3 (weight = 4)
+Node 2 -> 4 (weight = 1)
+Node 6 -> 8 (weight = 3)
 
-Path: 2 -> 4 -> 3 -> 6 -> 5
+Path: 1 -> 5 -> 6 -> 8
 
-Labels: 4	0	3	2	5	4	
+Labels: 0	3	7	4	2	3	4	6	
 
-Shortest distance to target (5): 5
+Shortest distance to target (8): 6

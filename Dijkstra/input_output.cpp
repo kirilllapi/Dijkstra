@@ -56,6 +56,8 @@ int* read_adjacency_matrix_from_file(const char* filename, int& from, int& to, i
 
             if (weight != 0) arc_count++;
 
+            if (weight < 0) return NULL;
+
             matrix[i * node_count + j] = weight;
         }
     }

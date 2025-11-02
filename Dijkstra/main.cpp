@@ -9,7 +9,11 @@ int main()
 
     int* matrix = read_adjacency_matrix_from_file("matrix.txt", from, to, node_count, arc_count);
 
-    if (matrix == NULL) return 1;
+    if (matrix == NULL)
+    {
+        std::cerr << "The matrix contains a negative weight!";
+        return 1;
+    }
 
     print_adjacency_matrix_in_file(matrix, node_count);
 
@@ -18,8 +22,13 @@ int main()
     print_arrays_in_file(graph, node_count, arc_count);
 
     int* path = find_short_path(graph, node_count, arc_count, from, to);
+    if (path == NULL)
+    {
+        std::cerr << "Path is invalid!";
+        return 1;
+    }
 
-    drawWindow(matrix, node_count, path, from, to);
+    drawWindow(matrix, node_count, arc_count, path, from, to, graph);
     
     free(graph);
     free(matrix);
