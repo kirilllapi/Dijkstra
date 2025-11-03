@@ -22,6 +22,12 @@
     <Filter Include="Source Files\IO">
       <UniqueIdentifier>{460339a9-9e75-402f-9c60-9df6e61ca5dd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\UI">
+      <UniqueIdentifier>{914e1085-68af-4d2f-8629-b9fe2022a06b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Files">
+      <UniqueIdentifier>{5865c33f-8593-475a-97dc-87f69b105a81}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -37,15 +43,15 @@
       <Filter>Source Files\IO</Filter>
     </ClCompile>
     <ClCompile Include="UI.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\UI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="matrix.txt">
-      <Filter>Source Files</Filter>
-    </Text>
     <Text Include="report.txt">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Files</Filter>
+    </Text>
+    <Text Include="matrix.txt">
+      <Filter>Source Files\Files</Filter>
     </Text>
   </ItemGroup>
   <ItemGroup>
@@ -59,7 +65,7 @@
       <Filter>Source Files\IO</Filter>
     </ClInclude>
     <ClInclude Include="UI.h">
-      <Filter>Header Files</Filter>
+      <Filter>Source Files\UI</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

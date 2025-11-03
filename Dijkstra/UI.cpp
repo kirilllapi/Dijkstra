@@ -8,8 +8,7 @@
 #include <iostream>
 #include "UI.h"
 
-// Статическая функция для рисования стрелки
-// Функция рисования стрелки
+
 static void drawArrow(sf::RenderTarget& target, sf::Vector2f from, sf::Vector2f to, float nodeRadius, sf::Color color, float size = 20.f)
 {
     sf::Vector2f dir = to - from;
@@ -119,7 +118,32 @@ void drawLoopWeight(sf::RenderTarget& target, sf::Vector2f pos, float nodeRadius
 }
 
 
-int drawWindow(int *matrix, int node_count, int arc_count, int* path, int from, int to, adjacency_list init_adjacency_list)
+void matrixToVector(int* matrix, int node_count, std::vector<std::vector<int>> &adjacency)
+{
+    for (int i = 0; i < node_count; i++)
+    {
+        for (int j = 0; j < node_count; j++)
+        {
+            adjacency[i][j] = matrix[i * node_count + j];
+        }
+    }
+}
+
+
+void createNormPath(int* path, int to, int node_count, std::vector<int> &normPath)
+{
+    char first = 1;
+    for (int i = 0; i < node_count; i++)
+    {
+        normPath.push_back(path[i] - 1);
+        if (path[i] == to) break;
+
+    }
+}
+
+
+
+int drawWindow(int *matrix, int node_count, int arc_count, int* path, int from, int to)
 {
     sf::Clock clock;
     bool repelActive = true;
@@ -134,28 +158,11 @@ int drawWindow(int *matrix, int node_count, int arc_count, int* path, int from, 
     sf::RenderWindow window(sf::VideoMode({ (unsigned)WIDTH, (unsigned)HEIGHT }), "Graph", sf::State::Windowed, settings);
     window.setFramerateLimit(60);
 
-    // Пример ориентированного графа (оставил твой)
     std::vector<std::vector<int>> adjacency(node_count, std::vector<int>(node_count, 0));;
-
-    for (int i = 0; i < node_count; i++)
-    {
-        for (int j = 0; j < node_count; j++)
-        {
-            adjacency[i][j] = matrix[i * node_count + j];
-        }
-    }
-
-    char first = 1;
+    matrixToVector(matrix, node_count, adjacency);
 
     std::vector<int> normPath;
-    for (int i = 0; i < node_count; i++)
-    {
-        
-            
-        normPath.push_back(path[i] - 1);
-        if (path[i] == to) break;
-        
-    }
+    createNormPath(path, to, node_count, normPath);
 
     int n = static_cast<int>(adjacency.size());
     std::vector<sf::Vector2f> nodes(n);
@@ -190,10 +197,7 @@ int drawWindow(int *matrix, int node_count, int arc_count, int* path, int from, 
     {
 
 
-
-        float elapsed = clock.getElapsedTime().asSeconds();
-       
-
+        // ======================================= ОБРАБОТЧИК ============================================
         while (auto event = window.pollEvent())
         {
             if (event->is<sf::Event::Closed>())
@@ -253,11 +257,15 @@ int drawWindow(int *matrix, int node_count, int arc_count, int* path, int from, 
                     keyPressed->scancode == sf::Keyboard::Scancode::RControl)
                 {
                     repelActive = !repelActive;
-                    std::cout << "repelActive = " << (repelActive ? "ON" : "OFF") << std::endl;
                 }
             }
         }
 
+
+
+
+
+        // ======================================= АНИМАЦИЯ ============================================
         if (repelActive)
         {
             std::vector<sf::Vector2f> disp(n, { 0.f, 0.f });
@@ -279,7 +287,7 @@ int drawWindow(int *matrix, int node_count, int arc_count, int* path, int from, 
             }
 
             // --- Притяжение (по рёбрам) ---
-            const float springK = 0.02f;      // сила пружины
+            const float springK = 0.02f;                  // сила пружины
             const float restLen = node_count * 30.f;      // естественная длина ребра
             for (int i = 0; i < n; ++i)
             {
@@ -319,20 +327,23 @@ int drawWindow(int *matrix, int node_count, int arc_count, int* path, int from, 
 
 
 
-        // --- Рендер ---
+
+
+
+        // ===================================== РЕНДЕР ==========================================
         window.clear(sf::Color(18, 18, 18));
 
         sf::Font font;
-
-        try {
+        try 
+        {
             std::filesystem::path filename = "C:\\WINDOWS\\Fonts\\Verdana.ttf";
             font.openFromFile(filename);
         }
-        catch (std::exception& e) {
+        catch (std::exception& e) 
+        {
             return -1; // Не удалось загрузить шрифт
         }
 
-        // Внутри цикла рёбер:
         for (int i = 0; i < n; ++i)
         {
             for (int j = 0; j < n; ++j)
@@ -388,7 +399,6 @@ int drawWindow(int *matrix, int node_count, int arc_count, int* path, int from, 
             node.setOrigin({ nodeRadius, nodeRadius });
             node.setPosition(nodes[i]);
 
-            // Текст с номером узла
             sf::Text text(font);
 
             if (i == draggedNode) node.setFillColor(sf::Color(220, 101, 128));
@@ -419,26 +429,26 @@ int drawWindow(int *matrix, int node_count, int arc_count, int* path, int from, 
 
                     text.setFillColor(sf::Color(255, 255, 255));
                     if (onPath)
-                        node.setOutlineColor(sf::Color(245, 105, 13)); // оранжевая обводка, если на пути
+                    {
+                        node.setOutlineColor(sf::Color(245, 105, 13));
+                    }
                     else
-                        node.setOutlineColor(sf::Color(47, 54, 77));   // серая, если не на пути
+                    {
+                        node.setOutlineColor(sf::Color(47, 54, 77));
+                    }
                 }
-
             }
 
             node.setFillColor(sf::Color(47, 54, 77));
             node.setOutlineThickness(3.f);
             window.draw(node);
 
-
-  
-
             text.setString(std::to_string(i + 1)); 
             text.setCharacterSize(static_cast<unsigned int>(nodeRadius - 5.0));
 
             // Центрирование текста
             sf::FloatRect bounds = text.getLocalBounds();
-            text.setOrigin(bounds.position + bounds.size / 2.f); // центрируем
+            text.setOrigin(bounds.position + bounds.size / 2.f); 
             text.setPosition(nodes[i]);
             window.draw(text);
 
@@ -446,21 +456,18 @@ int drawWindow(int *matrix, int node_count, int arc_count, int* path, int from, 
             window.draw(text);
         }
 
-
+        // ----------- Текстовая информация ------------
         {
-            // Фон под текстом
             sf::RectangleShape bg(sf::Vector2f(WIDTH, 40.f));
             bg.setPosition(sf::Vector2f(0.f, HEIGHT - 40.f));
             bg.setFillColor(sf::Color(25, 25, 25, 230));
             window.draw(bg);
 
-            // Создаём текст
             sf::Text infoText(font);
             infoText.setCharacterSize(18);
             infoText.setFillColor(sf::Color::White);
             infoText.setPosition(sf::Vector2f(10.f, HEIGHT - 32.f));
 
-            // Составляем строку пути через std::string
             std::string pathStr = "From: " + std::to_string(from) + "    To: " + std::to_string(to) + "    Path: ";
 
             for (int i = 0; i < static_cast<int>(normPath.size()); ++i)

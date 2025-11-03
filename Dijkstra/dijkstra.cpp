@@ -21,7 +21,7 @@ int* find_short_path(adjacency_list graph, int node_count, int arc_count, int fr
 
 	if (path == NULL)
 	{
-outfile << "Memory allocation error!" << std::endl;
+		std::cout << "Memory allocation error!" << std::endl;
 		free(labels);
 		free(visited);
 		return NULL;
@@ -30,7 +30,7 @@ outfile << "Memory allocation error!" << std::endl;
 
 	if (labels == NULL || visited == NULL)
 	{
-		outfile << "Memory allocation error!" << std::endl;
+		std::cout << "Memory allocation error!" << std::endl;
 		free(labels);
 		free(visited);
 		return NULL;
@@ -82,22 +82,20 @@ outfile << "Memory allocation error!" << std::endl;
 				continue;
 			}
 
-			if (!visited[adjacency_node] &&
-				labels[node_min_label] + graph->weight[next_node - 1] < labels[adjacency_node])
+			if (!visited[adjacency_node] && labels[node_min_label] + graph->weight[next_node - 1] < labels[adjacency_node])
 			{
 				labels[adjacency_node] = labels[node_min_label] + graph->weight[next_node - 1];
 
-				path[adjacency_node] = node_min_label + 1; // <-- исправлено
+				path[adjacency_node] = node_min_label + 1;
 
 				outfile << "Node " << node_min_label + 1 << " -> " << adjacency_node + 1
-					<< " (weight = " << graph->weight[next_node - 1] << ")\n";
+						<< " (weight = " << graph->weight[next_node - 1] << ")\n";
 			}
 			next_node = graph->next[next_node - 1];
 		}	
 	}
 
 	int current = to - 1;
-
 	int* tmp_path = (int*)calloc(node_count, sizeof(int));
 
 	if (!tmp_path) 
@@ -110,14 +108,15 @@ outfile << "Memory allocation error!" << std::endl;
 
 	int count = 0;
 
+	// Записываем в новый массив до точки откуда 
 	while (current != -1)
 	{
 		tmp_path[count++] = current + 1;
 		if (current == from - 1) break;
-		current = path[current] - 1; // идём по предшественникам
+		current = path[current] - 1;
 	}
 
-	// переворачиваем tmp_path для правильного порядка
+	// Переворачиваем tmp_path для правильного порядка
 	for (int i = 0; i < count / 2; i++)
 	{
 		int t = tmp_path[i];
@@ -125,7 +124,7 @@ outfile << "Memory allocation error!" << std::endl;
 		tmp_path[count - 1 - i] = t;
 	}
 
-	// выводим
+	// Выводим все в файл
 	outfile << "\nPath: ";
 	for (int i = 0; i < count; i++)
 	{
@@ -139,9 +138,7 @@ outfile << "Memory allocation error!" << std::endl;
 		outfile << (labels[i] == INT_MAX ? -1 : labels[i]) << "\t";
 	}
 
-
-	outfile << "\n\nShortest distance to target (" << to << "): "
-		<< (labels[to - 1] == INT_MAX ? -1 : labels[to - 1]) << "\n";
+	outfile << "\n\nShortest distance to target (" << to << "): " << (labels[to - 1] == INT_MAX ? -1 : labels[to - 1]) << "\n";
 
 	free(labels);
 	free(visited);

@@ -2,4 +2,4 @@
 #include "adjacency_list.h"
 
 
-int drawWindow(int*, int, int, int*, int, int, adjacency_list);
+int drawWindow(int*, int, int, int*, int, int);

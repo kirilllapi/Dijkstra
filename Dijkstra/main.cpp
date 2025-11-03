@@ -28,7 +28,7 @@ int main()
         return 1;
     }
 
-    drawWindow(matrix, node_count, arc_count, path, from, to, graph);
+    drawWindow(matrix, node_count, arc_count, path, from, to);
     
     free(graph);
     free(matrix);
