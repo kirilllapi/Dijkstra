@@ -42,7 +42,7 @@ adjacency_list init_adjacency_list(int node_count, int arc_count, int* matrix)
     }
 
 
-    graph->weight = (MY_TYPE*)calloc(size, sizeof(MY_TYPE));
+    graph->weight = (int*)calloc(size, sizeof(int));
     if (graph->weight == NULL)
     {
         outfile << "Memory allocation for weight error!" << std::endl;

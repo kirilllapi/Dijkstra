@@ -96,9 +96,9 @@ int* find_short_path(adjacency_list graph, int node_count, int arc_count, int fr
 	}
 
 	int current = to - 1;
-	int* tmp_path = (int*)calloc(node_count, sizeof(int));
+	int* result_path = (int*)calloc(node_count, sizeof(int));
 
-	if (!tmp_path) 
+	if (!result_path) 
 	{
 		outfile << "Memory allocation error for tmp_path!" << std::endl;
 		free(labels);
@@ -111,7 +111,7 @@ int* find_short_path(adjacency_list graph, int node_count, int arc_count, int fr
 	// Записываем в новый массив до точки откуда 
 	while (current != -1)
 	{
-		tmp_path[count++] = current + 1;
+		result_path[count++] = current + 1;
 		if (current == from - 1) break;
 		current = path[current] - 1;
 	}
@@ -119,9 +119,9 @@ int* find_short_path(adjacency_list graph, int node_count, int arc_count, int fr
 	// Переворачиваем tmp_path для правильного порядка
 	for (int i = 0; i < count / 2; i++)
 	{
-		int t = tmp_path[i];
-		tmp_path[i] = tmp_path[count - 1 - i];
-		tmp_path[count - 1 - i] = t;
+		int t = result_path[i];
+		result_path[i] = result_path[count - 1 - i];
+		result_path[count - 1 - i] = t;
 	}
 
 	// Выводим все в файл
@@ -129,7 +129,7 @@ int* find_short_path(adjacency_list graph, int node_count, int arc_count, int fr
 	for (int i = 0; i < count; i++)
 	{
 		if (i > 0) outfile << " -> ";
-		outfile << tmp_path[i];
+		outfile << result_path[i];
 	}
 
 	outfile << "\n\nLabels: ";
@@ -144,5 +144,5 @@ int* find_short_path(adjacency_list graph, int node_count, int arc_count, int fr
 	free(visited);
 	free(path);
 
-	return tmp_path;
+	return result_path;
 }

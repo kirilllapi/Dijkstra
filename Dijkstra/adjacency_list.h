@@ -2,8 +2,6 @@
 #include <stdlib.h>  
 #include <stdio.h>  
 
-#define MY_TYPE int
-
 // ================== —труктура списков смежности ==============
 /// <summary>
 /// —труктура списков смежности на основе массивов
@@ -11,7 +9,7 @@
 typedef struct adjacency_list_s {
 	int* nodes;
 	int* next;
-	MY_TYPE* weight;
+	int* weight;
 } *adjacency_list;
 
 
