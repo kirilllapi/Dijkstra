@@ -68,6 +68,66 @@ void drawLoop(sf::RenderTarget& target, sf::Vector2f pos, float nodeRadius, sf::
 }
 
 
+
+static void drawEdgeWeightBezier(sf::RenderTarget& target, sf::Vector2f from, sf::Vector2f to, int weight, float nodeRadius, sf::Font& font, sf::Color color = sf::Color::White, float offset = 50.f, int direction = 1)
+{
+    sf::Vector2f dir = to - from;
+    float len = std::sqrt(dir.x * dir.x + dir.y * dir.y);
+    if (len == 0.f) return;
+    dir /= len;
+
+    sf::Vector2f normal(-dir.y, dir.x); // нормаль для смещения
+    sf::Vector2f control = (from + to) * 0.5f + normal * offset * static_cast<float>(direction);
+
+    // --- Рисуем кривую квадратичной Безье ---
+    const int STEPS = 30; // чем больше — тем плавнее
+    sf::VertexArray curve(sf::PrimitiveType::LineStrip, STEPS + 1);
+
+    for (int i = 0; i <= STEPS; ++i)
+    {
+        float t = i / static_cast<float>(STEPS);
+        // квадратичная Безье: B(t) = (1-t)^2*P0 + 2*(1-t)*t*P1 + t^2*P2
+        sf::Vector2f point = (1 - t) * (1 - t) * from + 2 * (1 - t) * t * control + t * t * to;
+        // сдвигаем от центра узлов
+        if (i == 0) point += dir * nodeRadius;
+        if (i == STEPS) point -= dir * nodeRadius;
+        curve[i].position = point;
+        curve[i].color = color;
+    }
+    target.draw(curve);
+
+    // --- Стрелка в конце кривой ---
+ 
+    sf::Vector2f tangent = to - control;
+    float tangentLen = std::sqrt(tangent.x * tangent.x + tangent.y * tangent.y);
+    if (tangentLen != 0.f)
+    {
+        tangent /= tangentLen;
+        sf::ConvexShape arrow;
+        arrow.setPointCount(3);
+        sf::Vector2f tip = to - tangent * nodeRadius;
+        sf::Vector2f normalArrow(-tangent.y, tangent.x);
+        arrow.setPoint(0, tip);
+        arrow.setPoint(1, tip - tangent * 15.f + normalArrow * 7.f);
+        arrow.setPoint(2, tip - tangent * 15.f - normalArrow * 7.f);
+        arrow.setFillColor(color);
+        target.draw(arrow);
+    }
+
+    // --- Вес на середине дуги ---
+    sf::Text text(font);
+    text.setString(std::to_string(weight));
+    text.setCharacterSize(20);
+    text.setFillColor(sf::Color::White);
+
+    float t = 0.5f;
+    sf::Vector2f mid = (1 - t) * (1 - t) * from + 2 * (1 - t) * t * control + t * t * to;
+    text.setOrigin(text.getLocalBounds().getCenter());
+    text.setPosition(mid + normal * offset * (0.2f * direction)); // небольшое смещение от линии
+    target.draw(text);
+}
+
+
 static void drawEdgeWeight(sf::RenderTarget& target, sf::Vector2f from, sf::Vector2f to, int weight, float nodeRadius, sf::Font& font, sf::Color color = sf::Color::White)
 {
     // --- Рисуем линию ---
@@ -355,8 +415,7 @@ int drawWindow(int *matrix, int node_count, int arc_count, int* path, int from, 
                     // Проверка: ребро принадлежит пути?
                     for (int k = 0; k + 1 < normPath.size(); k++)
                     {
-                        if ((normPath[k] == i && normPath[k + 1] == j) ||
-                            (normPath[k] == j && normPath[k + 1] == i))
+                        if ((normPath[k] == i && normPath[k + 1] == j) || (normPath[k] == j && normPath[k + 1] == i))
                         {
                             inPath = true;
                             break;
@@ -372,16 +431,51 @@ int drawWindow(int *matrix, int node_count, int arc_count, int* path, int from, 
                     }
                     else
                     {
-                        bool bothDirections = adjacency[j][i] && i != j;
-                        if (bothDirections)
+                        bool reverseExists = adjacency[j][i] != 0;
+
+                        if (reverseExists && adjacency[i][j] != adjacency[j][i] && i < j)
                         {
-                            if (i < j)
+                            // Цвет для ребра i->j
+                            bool inPath1 = false;
+                            for (int k = 0; k + 1 < normPath.size(); k++)
                             {
-                                drawEdgeWeight(window, nodes[i], nodes[j], adjacency[i][j], nodeRadius, font, color);
+                                if (normPath[k] == i && normPath[k + 1] == j)
+                                {
+                                    inPath1 = true;
+                                    break;
+                                }
+                            }
+                            sf::Color color1 = inPath1 ? sf::Color(245, 105, 13) : sf::Color(47, 54, 77);
+
+                            // Цвет для ребра j->i
+                            bool inPath2 = false;
+                            for (int k = 0; k + 1 < normPath.size(); k++)
+                            {
+                                if (normPath[k] == j && normPath[k + 1] == i)
+                                {
+                                    inPath2 = true;
+                                    break;
+                                }
+                            }
+                            sf::Color color2 = inPath2 ? sf::Color(245, 105, 13) : sf::Color(47, 54, 77);
+
+                            drawEdgeWeightBezier(window, nodes[i], nodes[j], adjacency[i][j], nodeRadius, font, color1, 20.f, -1);
+                            drawEdgeWeightBezier(window, nodes[j], nodes[i], adjacency[j][i], nodeRadius, font, color2, 20.f, -1);
+                        }
+                        else if (adjacency[i][j] == adjacency[j][i])
+                        {
+                            bool bothDirections = adjacency[j][i] && i != j;
+                            if (bothDirections)
+                            {
+                                if (i < j)
+                                {
+                                    drawEdgeWeight(window, nodes[i], nodes[j], adjacency[i][j], nodeRadius, font, color);
+                                }
                             }
                         }
-                        else
+                        else if (!reverseExists)
                         {
+                            // Обычное однонаправленное ребро
                             drawEdgeWeight(window, nodes[i], nodes[j], adjacency[i][j], nodeRadius, font, color);
                             drawArrow(window, nodes[i], nodes[j], nodeRadius, color);
                         }
@@ -389,6 +483,7 @@ int drawWindow(int *matrix, int node_count, int arc_count, int* path, int from, 
                 }
             }
         }
+
 
 
 
@@ -470,12 +565,26 @@ int drawWindow(int *matrix, int node_count, int arc_count, int* path, int from, 
 
             std::string pathStr = "From: " + std::to_string(from) + "    To: " + std::to_string(to) + "    Path: ";
 
-            for (int i = 0; i < static_cast<int>(normPath.size()); ++i)
+            if (normPath.size() == 1)
             {
-                if (i > 0) pathStr += " -> ";
-                pathStr += std::to_string(normPath[i] + 1);
+                if (to == from)
+                {
+                    pathStr += "Start and end vertices are the same.";
+                }
+                else
+                {
+                    pathStr += "No path found.";
+                }
             }
-
+            else
+            {
+                for (int i = 0; i < static_cast<int>(normPath.size()); ++i)
+                {
+                    if (i > 0) pathStr += " -> ";
+                    pathStr += std::to_string(normPath[i] + 1);
+                }
+            }
+            
             infoText.setString(pathStr);
             window.draw(infoText);
         }

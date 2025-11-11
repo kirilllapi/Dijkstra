@@ -18,7 +18,7 @@ int* read_adjacency_matrix_from_file(const char* filename, int& from, int& to, i
     std::ifstream infile(filename);
     if (!infile)
     {
-        outfile << "Failed to open file!" << std::endl;
+        std::cerr << "Failed to open file!" << std::endl;
         return NULL;
     }
 
@@ -26,20 +26,27 @@ int* read_adjacency_matrix_from_file(const char* filename, int& from, int& to, i
     outfile << "Size matrix: " << node_count << "x" << node_count << std::endl;
     if (node_count <= 0)
     {
-        outfile << "Invalid graph size!" << std::endl;
+        std::cerr << "Invalid graph size!" << std::endl;
         return NULL;
     }
 
     int* matrix = (int*)malloc(node_count * node_count * sizeof(int));
     if (matrix == NULL)
     {
-        outfile << "Memory allocation error!" << std::endl;
+        std::cerr << "Memory allocation error!" << std::endl;
         return NULL;
     }
 
 
     infile >> from;
     infile >> to;
+
+    if ((from < 1 || to < 1) || (from > node_count || to > node_count))
+    {
+        std::cerr << "Error: vertex index out of range!";
+        return NULL;
+    }
+
     outfile << "Path from: " << from << std::endl;
     outfile << "Path to: " << to << std::endl;
     outfile << "\n " << std::endl;
@@ -48,17 +55,29 @@ int* read_adjacency_matrix_from_file(const char* filename, int& from, int& to, i
     arc_count = 0;
     int weight;
 
+    int read_count = 0;
+
     for (int i = 0; i < node_count; i++)
     {
         for (int j = 0; j < node_count; j++)
         {
-            infile >> weight;
+            if (!(infile >> weight))  // если не удалось считать число
+            {
+                std::cerr << "Error: invalid or incomplete adjacency matrix!" << std::endl;
+                free(matrix);
+                return NULL;
+            }
 
             if (weight != 0) arc_count++;
-
-            if (weight < 0) return NULL;
+            if (weight < 0)
+            {
+                std::cerr << "The matrix contains a negative weight!";
+                free(matrix);
+                return NULL;
+            }
 
             matrix[i * node_count + j] = weight;
+            read_count++;
         }
     }
 
@@ -95,6 +114,10 @@ void print_arrays_in_file(adjacency_list graph, int node_count, int arc_count)
 
     outfile << "\n\nAdjacency_list: " << std::endl;
 
+    outfile << "Index:  ";
+    for (int i = 0; i < size; i++) outfile << i + 1 << "\t";
+    outfile << "\n";
+
     outfile << "Nodes:  ";
     for (int i = 0; i < size; i++) outfile << graph->nodes[i] << "\t";
     outfile << "\n";
@@ -104,7 +127,17 @@ void print_arrays_in_file(adjacency_list graph, int node_count, int arc_count)
     outfile << "\n";
 
     outfile << "Weight: ";
-    for (int i = 0; i < size; i++) outfile << graph->weight[i] << "\t";
+    for (int i = 0; i < size; i++)
+    {
+        if (graph->weight[i] == INT_MAX)
+        {
+            outfile << "inf" << "\t";
+        }
+        else
+        {
+            outfile << graph->weight[i] << "\t";
+        }
+    }
     outfile << "\n";
 }
 

@@ -11,7 +11,6 @@ int main()
 
     if (matrix == NULL)
     {
-        std::cerr << "The matrix contains a negative weight!";
         return 1;
     }
 
@@ -22,11 +21,9 @@ int main()
     print_arrays_in_file(graph, node_count, arc_count);
 
     int* path = find_short_path(graph, node_count, arc_count, from, to);
-    if (path == NULL)
-    {
-        std::cerr << "Path is invalid!";
-        return 1;
-    }
+
+    outfile << "\n================= After calculating =================";
+    print_arrays_in_file(graph, node_count, arc_count);
 
     drawWindow(matrix, node_count, arc_count, path, from, to);
     
